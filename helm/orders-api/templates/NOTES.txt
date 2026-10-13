@@ -1,0 +1,19 @@
+orders-api {{ include "orders-api.imageTag" . }} deployed to namespace {{ .Release.Namespace }}.
+
+Check the rollout:
+  kubectl -n {{ .Release.Namespace }} rollout status deploy/{{ include "orders-api.fullname" . }}
+{{- if .Values.ingress.enabled }}
+{{- if .Values.ingress.host }}
+
+Through the ingress (kind maps it to localhost:80):
+  curl -H "Host: {{ .Values.ingress.host }}" http://localhost/health
+{{- else }}
+
+Through the ingress controller's load balancer:
+  kubectl -n ingress-nginx get svc ingress-nginx-controller
+{{- end }}
+{{- end }}
+
+Without the ingress:
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "orders-api.fullname" . }} 8000:{{ .Values.service.port }}
+  curl http://localhost:8000/health

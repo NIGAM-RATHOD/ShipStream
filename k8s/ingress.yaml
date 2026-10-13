@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: orders-api
+  namespace: shipstream
+  labels:
+    app.kubernetes.io/name: orders-api
+    app.kubernetes.io/part-of: shipstream
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: orders.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: orders-api
+                port:
+                  name: http

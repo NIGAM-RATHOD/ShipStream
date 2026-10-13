@@ -1,0 +1,16 @@
+# Overrides for "AWS mode" (EKS + ECR). See docs/aws-mode.md.
+# The pipeline sets image.repository to <account>.dkr.ecr.<region>.amazonaws.com/orders-api
+
+ingress:
+  enabled: true
+  className: nginx
+  # Empty host = match any Host header, so the NLB's generated DNS name works as-is.
+  host: ""
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi

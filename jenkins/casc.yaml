@@ -1,0 +1,58 @@
+# Jenkins Configuration as Code: admin user, the kind kubeconfig credential,
+# and the pipeline job. Applied on every start, so the UI never needs clicking.
+jenkins:
+  systemMessage: "ShipStream CI/CD - local mode (kind + local registry)"
+  numExecutors: 2
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "${JENKINS_ADMIN_ID:-admin}"
+          password: "${JENKINS_ADMIN_PASSWORD:-admin}"
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          # Written by scripts/local-up.sh. Points at https://shipstream-control-plane:6443,
+          # which resolves because this container joins the "kind" Docker network.
+          - file:
+              scope: GLOBAL
+              id: kind-kubeconfig
+              description: "kubeconfig for the local kind cluster (internal address)"
+              fileName: kubeconfig
+              secretBytes: "${readFileBase64:/run/secrets/shipstream/kubeconfig}"
+          # AWS mode: uncomment and export AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY
+          # before "docker compose up", or create the credential in the UI instead.
+          # See docs/aws-mode.md.
+          # - aws:
+          #     scope: GLOBAL
+          #     id: aws-jenkins
+          #     description: "IAM user shipstream-jenkins"
+          #     accessKey: "${AWS_ACCESS_KEY_ID}"
+          #     secretKey: "${AWS_SECRET_ACCESS_KEY}"
+
+unclassified:
+  location:
+    url: "http://localhost:8080/"
+
+jobs:
+  - script: |
+      pipelineJob('shipstream-orders-api') {
+        description('Build, scan, and deploy orders-api. Jenkinsfile lives in the repo root.')
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote { url('${REPO_URL:-file:///repo}') }
+                branch('${REPO_BRANCH:-*/main}')
+              }
+            }
+            scriptPath('Jenkinsfile')
+            lightweight(true)
+          }
+        }
+      }

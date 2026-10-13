@@ -1,0 +1,10 @@
+# Shell scripts and container files must keep LF endings even on Windows checkouts,
+# otherwise bash fails with "$'\r': command not found".
+* text=auto
+*.sh text eol=lf
+Jenkinsfile text eol=lf
+Dockerfile text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.tpl text eol=lf
+*.png binary

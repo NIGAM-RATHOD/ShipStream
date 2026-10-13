@@ -1,0 +1,8 @@
+# Accepted vulnerabilities for the Trivy gate in the Jenkinsfile.
+# One CVE ID per line. Every entry needs a reason and an expiry - e.g.:
+#
+#   # CVE-2099-12345: not reachable (we never call zlib's inflate on untrusted input).
+#   # Review by 2026-12-31.
+#   CVE-2099-12345
+#
+# Keep this file empty unless there is a written justification.

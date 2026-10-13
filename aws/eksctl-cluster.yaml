@@ -1,0 +1,41 @@
+# EKS cluster for ShipStream "AWS mode".
+#   Replace <ACCOUNT_ID> (and the region if needed), then:
+#   eksctl create cluster -f aws/eksctl-cluster.yaml
+# Cost: EKS control plane + 2x t3.medium + 1 NLB, billed while running. Delete when done:
+#   eksctl delete cluster -f aws/eksctl-cluster.yaml
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: shipstream
+  region: us-east-1
+  tags:
+    project: shipstream
+
+accessConfig:
+  authenticationMode: API_AND_CONFIG_MAP
+  accessEntries:
+    # The Jenkins IAM user can manage workloads in "shipstream" only, and read
+    # "ingress-nginx" (the smoke test looks up the NLB hostname there).
+    - principalARN: arn:aws:iam::<ACCOUNT_ID>:user/shipstream-jenkins
+      accessPolicies:
+        - policyARN: arn:aws:eks::aws:cluster-access-policy/AmazonEKSEditPolicy
+          accessScope:
+            type: namespace
+            namespaces: ["shipstream"]
+        - policyARN: arn:aws:eks::aws:cluster-access-policy/AmazonEKSViewPolicy
+          accessScope:
+            type: namespace
+            namespaces: ["ingress-nginx"]
+
+managedNodeGroups:
+  - name: ng-default
+    instanceType: t3.medium
+    desiredCapacity: 2
+    minSize: 2
+    maxSize: 3
+    volumeSize: 20
+    # eksctl attaches AmazonEC2ContainerRegistryReadOnly to the node role by default,
+    # which is what lets the nodes pull orders-api from ECR.
+    labels:
+      role: general

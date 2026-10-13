@@ -1,0 +1,46 @@
+# Local Jenkins for ShipStream.
+#   Prereq: ./scripts/local-up.sh   (creates the "kind" network and jenkins/secrets/kubeconfig)
+#   Start:  docker compose -f jenkins/docker-compose.yml up -d --build
+#   UI:     http://localhost:8080   (admin / admin unless JENKINS_ADMIN_PASSWORD is set)
+name: shipstream-jenkins
+
+services:
+  jenkins:
+    build:
+      context: .
+    image: shipstream/jenkins:local
+    container_name: shipstream-jenkins
+    restart: unless-stopped
+    # Root only for the entrypoint's docker.sock group fix; Jenkins itself runs as "jenkins".
+    user: root
+    ports:
+      - "8080:8080"
+    environment:
+      JAVA_OPTS: >-
+        -Djenkins.install.runSetupWizard=false
+        -Dhudson.plugins.git.GitSCM.ALLOW_LOCAL_CHECKOUT=true
+      CASC_JENKINS_CONFIG: /var/jenkins_casc/casc.yaml
+      JENKINS_ADMIN_ID: ${JENKINS_ADMIN_ID:-admin}
+      JENKINS_ADMIN_PASSWORD: ${JENKINS_ADMIN_PASSWORD:-admin}
+      # The repo below is mounted read-only; Jenkins clones committed changes from it.
+      # Point this at a GitHub URL instead once the repo is pushed.
+      REPO_URL: ${REPO_URL:-file:///repo}
+      REPO_BRANCH: ${REPO_BRANCH:-*/main}
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./casc.yaml:/var/jenkins_casc/casc.yaml:ro
+      - ./secrets:/run/secrets/shipstream:ro
+      - ..:/repo:ro
+    networks:
+      - default
+      - kind
+
+volumes:
+  jenkins_home:
+
+networks:
+  # Created by "kind create cluster". Joining it lets Jenkins reach
+  # shipstream-control-plane:6443 (API) and :80 (ingress) by container name.
+  kind:
+    external: true

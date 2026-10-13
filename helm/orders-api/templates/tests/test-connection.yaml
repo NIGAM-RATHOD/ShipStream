@@ -1,0 +1,32 @@
+# Run with: helm test <release> -n <namespace>
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "orders-api.fullname" . }}-test-connection"
+  labels:
+    {{- include "orders-api.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  # Must satisfy the "restricted" Pod Security Standard, like the app itself.
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65534
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: wget
+      image: busybox:1.36
+      command:
+        - wget
+        - -qO-
+        - -T
+        - "5"
+        - "http://{{ include "orders-api.fullname" . }}:{{ .Values.service.port }}/health"
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]

@@ -1,0 +1,10 @@
+apiVersion: v2
+name: orders-api
+description: ShipStream orders-api (FastAPI) - Deployment, Service, Ingress, PDB
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - shipstream
+  - fastapi
+  - orders
